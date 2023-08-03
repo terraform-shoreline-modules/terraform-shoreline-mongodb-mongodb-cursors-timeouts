@@ -1,0 +1,126 @@
+{
+  "name": "mongodb_cursors_timeouts_incident",
+  "description": "The MongoDB cursors timeouts incident refers to an issue where too many cursors are timing out in a MongoDB instance. This can cause disruptions in the normal functioning of the database and lead to delays in processing queries. This incident type requires immediate attention from the software engineer to resolve the issue and prevent any further damage to the system.",
+  "params": [
+    {
+      "name": "OPID",
+      "value": ""
+    },
+    {
+      "name": "CLIENT_ADDRESS",
+      "value": ""
+    },
+    {
+      "name": "DATABASE_NAME",
+      "value": ""
+    },
+    {
+      "name": "NEW_TIMEOUT_LIMIT",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## MongoDB cursors timeouts incident\nThe MongoDB cursors timeouts incident refers to an issue where too many cursors are timing out in a MongoDB instance. This can cause disruptions in the normal functioning of the database and lead to delays in processing queries. This incident type requires immediate attention from the software engineer to resolve the issue and prevent any further damage to the system."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if MongoDB is running"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `systemctl status mongod`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check MongoDB logs for any errors related to cursors"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `tail -f /var/log/mongodb/mongod.log | grep 'cursor'`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the current number of open cursors"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `mongo ${DATABASE_NAME} --eval \"printjson(db.serverStatus().cursors)\"`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the number of cursors being used by a specific client"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `mongo ${DATABASE_NAME} --eval \"printjson(db.currentOp({'client_s' : '${CLIENT_ADDRESS}'}))\"`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the number of cursors being used by all clients"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `mongo ${DATABASE_NAME} --eval \"printjson(db.currentOp({'active': true, 'op': 'query', 'ns': /${DATABASE_NAME}./, '$where': 'this.cursorInfo != null'}))\"`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Kill a specific cursor"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `mongo ${DATABASE_NAME} --eval \"db.killOp(${OPID})\"`"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Increase the cursor timeout limit if necessary to prevent timeouts from occurring in the future."
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_update_mongodb_cursor_timeout($NEW_TIMEOUT_LIMIT)"
+    }
+  ]
+}
